@@ -472,21 +472,14 @@ def train():
             Evaluator(
                 100, ['role_id', 'policy_state_in', 'last_cards_in', 'lstm_state_in'],
                 ['active_prob', 'passive_prob', 'new_lstm_state'], get_player),
-            # SendStat(
-            #     'export http_proxy=socks5://127.0.0.1:1080 https_proxy=socks5://127.0.0.1:1080 && /home/neil/anaconda3/bin/curl --header "Access-Token: o.CUdAMXqiVz9qXTxLYIXc0XkcAfZMpNGM" -d type=note -d title="doudizhu" '
-            #     '-d body="lord win rate: {lord_win_rate}\n policy loss: {policy_loss_2}\n value loss: {value_loss_2}\n entropy loss: {entropy_loss_2}\n'
-            #     'true reward: {true_reward_2}\n predict reward: {predict_reward_2}\n advantage: {rms_advantage_2}\n" '
-            #     '--request POST https://api.pushbullet.com/v2/pushes',
-            #     ['lord_win_rate', 'policy_loss_2', 'value_loss_2', 'entropy_loss_2',
-            #      'true_reward_2', 'predict_reward_2', 'rms_advantage_2']
-            #     ),
         ],
         # session_init=SaverRestore('./train_log/a3c_action_1d/max-true_reward_2'),
         # session_init=ModelLoader('policy_network_2', 'SL_policy_network', 'value_network', 'SL_value_network'),
         steps_per_epoch=STEPS_PER_EPOCH,
         max_epoch=1000,
     )
-    trainer = SimpleTrainer() if config.nr_tower == 1 else AsyncMultiGPUTrainer(train_tower)
+
+    trainer = SimpleTrainer() if nr_gpu <= 1 else AsyncMultiGPUTrainer(train_tower)
     launch_train_with_config(config, trainer)
 
 
