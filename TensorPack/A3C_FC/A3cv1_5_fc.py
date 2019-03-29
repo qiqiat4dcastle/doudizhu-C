@@ -455,8 +455,7 @@ class MySimulatorMaster(SimulatorMaster, Callback):
         """
         Launch forward prediction for the new state given by some client.
         """
-        def cb(outputs):
-            # logger.info('async predictor callback')
+        def _call_back(outputs):
             try:
                 output = outputs.result()
             except CancelledError:
@@ -464,13 +463,15 @@ class MySimulatorMaster(SimulatorMaster, Callback):
                 return
             mode = output[-1]
             distrib = (output[:-1][mode] + 1e-6) * mask
+
             assert np.all(np.isfinite(distrib)), distrib
             action = np.random.choice(len(distrib), p=distrib / distrib.sum())
+            import pdb; pdb.set_trace()
             client.memory[role_id - 1].append(TransitionExperience(
                 prob_state, all_state, action, reward=0, minor_type=minor_type, first_st=first_st,
                 last_cards_onehot=last_cards_onehot, mode=mode, prob=distrib[action]))
             self.send_queue.put([client.ident, dumps(action)])
-        self.async_predictor.put_task([role_id, prob_state, all_state, last_cards_onehot, minor_type, mode], cb)
+        self.async_predictor.put_task([role_id, prob_state, all_state, last_cards_onehot, minor_type, mode], _call_back)
 
     def _process_msg(self, client, role_id, prob_state, all_state, last_cards_onehot, first_st, mask, minor_type, mode, reward, isOver):
         """

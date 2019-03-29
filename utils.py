@@ -2,7 +2,7 @@ import card
 from card import action_space, Category, action_space_category
 import numpy as np
 from collections import Counter
-import tensorflow as tf
+# import tensorflow as tf
 import argparse
 import time
 from contextlib import contextmanager
@@ -195,7 +195,7 @@ def get_feature_state(env, mask=None):
         m = mask[i]
         if m:
             a = action_space[i]
-            
+
             if not a:
                 features[i, 1] = 1
                 continue
@@ -268,7 +268,7 @@ def train_fake_action(targets, handcards, s, sess, network, category_idx, main_c
         target_val = card.Card.char2value_3_17(target) - 3
         input_single, input_pair, input_triple, input_quadric = get_masks(handcards, None)
 
-        _, response_active_output, fake_loss = sess.run([network.optimize_fake, 
+        _, response_active_output, fake_loss = sess.run([network.optimize_fake,
             network.fc_response_minor_output,
             network.minor_response_loss],
                 feed_dict = {
@@ -382,14 +382,14 @@ def test_fake_action(targets, handcards, s, sess, network, category_idx, dup_mas
         # give minor cards
         response_minor_output = response_minor_output[0]
         response_minor_output[dup_mask == 0] = -1
-        
+
         if is_pair:
             # fix dimension mismatch
             input_pair = np.concatenate([input_pair, [0, 0]])
             response_minor_output[input_pair == 0] = -1
         else:
             response_minor_output[input_single == 0] = -1
-        
+
         response_minor = np.argmax(response_minor_output)
         dup_mask[response_minor] = 0
 
@@ -439,7 +439,7 @@ def pick_main_cards(category, cards_char):
     if category == Category.FOUR_TWO.value:
         return cards_char[:-2]
     return None
-    
+
 
 def get_mask_alter(cards, last_cards, last_cards_category):
     decision_mask = None
@@ -502,7 +502,7 @@ def get_mask_alter(cards, last_cards, last_cards_category):
             if no_bomb:
                 decision_mask[1] = 0
         return decision_mask, response_mask, bomb_mask, length_mask
-    
+
 
 # return [3-17 value]
 def give_cards_without_minor(response, last_cards_value, category_idx, length_output):
@@ -808,7 +808,7 @@ def update_params(scope_from, scope_to):
             ops.append(to_var.assign(from_var))
     return ops
 
-    
+
 if __name__ == '__main__':
     mask = get_mask(['A', 'A', 'A'], action_space)
     print(mask[0])

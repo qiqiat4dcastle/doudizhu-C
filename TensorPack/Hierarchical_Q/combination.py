@@ -1,5 +1,5 @@
 import numpy as np
-from pyenv import Pyenv
+from env import Env as Pyenv
 import os
 import sys
 if os.name == 'nt':
@@ -69,7 +69,7 @@ def recursive():
         env.reset()
         env.prepare()
         # print(env.get_handcards())
-        cards = env.get_handcards()[:15]
+        cards = env.get_curr_handcards()[:15]
         cards = ['J', '10', '10', '7', '7', '6']
 
         # last_cards = ['3', '3']
@@ -98,6 +98,7 @@ def recursive():
         t2 = timeit.default_timer()
         st.feed(t2 - t1)
         print(len(combs))
+        import pdb; pdb.set_trace()
         for comb in combs:
             for idx in comb:
                 print(action_space[idx], end=', ')

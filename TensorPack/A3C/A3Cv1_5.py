@@ -4,7 +4,9 @@ import uuid
 import argparse
 
 import tensorflow as tf
-import tensorflow.contrib.rnn as rnn
+import tensorflow.nn.rnn_cell as rnn
+# import tensorflow.contrib.rnn as rnn
+
 import sys
 import os
 
@@ -69,13 +71,14 @@ def get_player():
 class Model(ModelDesc):
     def get_policy(self, role_id, state, last_cards, lstm_state):
         # policy network, different for three agents
+        import pdb; pdb.set_trace()
         batch_size = tf.shape(role_id)[0]
         gathered_outputs = []
         indices = []
         # train landlord only
         for idx in range(1, 4):
             with tf.variable_scope('policy_network_%d' % idx):
-                lstm = rnn.BasicLSTMCell(1024, state_is_tuple=False)
+                lstm = rnn.LSTMCell(1024, state_is_tuple=False)
                 id_idx = tf.where(tf.equal(role_id, idx))
                 indices.append(id_idx)
                 state_id = tf.gather_nd(state, id_idx)
@@ -84,36 +87,20 @@ class Model(ModelDesc):
                 with slim.arg_scope([slim.fully_connected, slim.conv2d],
                                     weights_regularizer=slim.l2_regularizer(POLICY_WEIGHT_DECAY)):
                     with tf.variable_scope('branch_main'):
+                        policy_blocks = [[128, 3, 'identity'],
+                                         [128, 3, 'identity'],
+                                         [128, 3, 'downsampling'],
+                                         [128, 3, 'identity'],
+                                         [128, 3, 'identity'],
+                                         [256, 3, 'downsampling'],
+                                         [256, 3, 'identity'],
+                                         [256, 3, 'identity']]
                         flattened_1 = policy_conv_block(state_id[:, :60], 32, POLICY_INPUT_DIM // 3,
-                                                        [[128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'downsampling'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [256, 3, 'downsampling'],
-                                                         [256, 3, 'identity'],
-                                                         [256, 3, 'identity']
-                                                         ], 'branch_main1')
+                                                        policy_blocks, 'branch_main1')
                         flattened_2 = policy_conv_block(state_id[:, 60:120], 32, POLICY_INPUT_DIM // 3,
-                                                        [[128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'downsampling'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [256, 3, 'downsampling'],
-                                                         [256, 3, 'identity'],
-                                                         [256, 3, 'identity']
-                                                         ], 'branch_main2')
+                                                        policy_blocks, 'branch_main2')
                         flattened_3 = policy_conv_block(state_id[:, 120:], 32, POLICY_INPUT_DIM // 3,
-                                                        [[128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'downsampling'],
-                                                         [128, 3, 'identity'],
-                                                         [128, 3, 'identity'],
-                                                         [256, 3, 'downsampling'],
-                                                         [256, 3, 'identity'],
-                                                         [256, 3, 'identity']
-                                                         ], 'branch_main3')
+                                                        policy_blocks, 'branch_main3')
 
                         flattened = tf.concat([flattened_1, flattened_2, flattened_3], axis=1)
 

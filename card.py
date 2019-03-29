@@ -222,7 +222,7 @@ class Card:
                 ind += 1
             mask[ind] = 1
             result[i] = ind
-            
+
         return result
 
     @staticmethod
@@ -290,7 +290,7 @@ class Card:
             return cards
         else:
             return Card.value_to_cards[values]
-    
+
     @staticmethod
     def to_cards_from_3_17(values):
         return Card.np_cards[values-3].tolist()
@@ -576,7 +576,8 @@ if __name__ == '__main__':
     # actions = get_action_space()
     # for i in range(1, len(actions)):
     #     CardGroup.to_cardgroup(actions[i])
-    # print(CardGroup.folks(['3', '4', '3', '4', '3', '4', '*', '$']))
+    print(CardGroup.folks(['3', '4', '3', '4', '3', '4', '*', '$']))
+    import pdb; pdb.set_trace()
     # CardGroup.to_cardgroup(['3', '4', '3', '4', '3', '4', '*', '$'])
     # print actions[561]
     # print CardGroup.folks(actions[561])
@@ -584,4 +585,4 @@ if __name__ == '__main__':
     # print Card.to_onehot(['3', '4', '4', '$'])
     # print len(actions)
     # print Card.to_cards(1)
-    # CardGroup.analyze(['3', '3', '3', '4', '4', '4', '10', 'J', 'Q', 'A', 'A', '2', '2', '*', '$'])
+    CardGroup.analyze(['3', '3', '3', '4', '4', '4', '10', 'J', 'Q', 'A', 'A', '2', '2', '*', '$'])

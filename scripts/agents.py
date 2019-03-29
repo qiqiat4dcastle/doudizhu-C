@@ -5,74 +5,70 @@ from utils import to_char, to_value, get_mask_alter, give_cards_without_minor, \
     get_mask, action_space_single, action_space_pair, get_category_idx, normalize
 import sys
 import os
-if os.name == 'nt':
-    sys.path.insert(0, './build/Release')
-else:
-    sys.path.insert(0, './build.linux')
 from datetime import datetime
-from tensorpack import *
 from env import Env as CEnv
-from TensorPack.MA_Hierarchical_Q.predictor import Predictor
-from TensorPack.MA_Hierarchical_Q.DQNModel import Model
 
 
-weight_path = './model-302500'
+trans_dict = {'T': '10', 'B': '$', 'L': '*'}
+
+def trans_cards(delta_cards):
+    """将 deltadou 中的格式转化为当前程序中的格式
+    """
+    res = []
+
+    for c in delta_cards:
+        if c in trans_dict:
+            res.append(trans_dict[c])
+        else:
+            res.append(c)
+
+    return res
+
+trans_dict_rev = {'10': 'T', '$': 'B', '*': 'L'}
+
+def trans_cards_reverse(delta_cards):
+    """将 deltadou 中的格式转化为当前程序中的格式
+    """
+    res = []
+
+    for c in delta_cards:
+        if c in trans_dict_rev:
+            res.append(trans_dict_rev[c])
+        else:
+            res.append(c)
+
+    return "".join(res)
+
+from flask import Flask, jsonify, request
+app = Flask(__name__)
+
+# // 2 ：地主， 1： 地主上家，3：地主下家
 
 
-class Agent:
-    def __init__(self, role_id):
-        self.role_id = role_id
+@app.route('/AI/play/', methods=['POST'])
+def ai_play():
+    data = request.json
+    print(data)
+    pos = int(data['current_player'])
 
-    def intention(self, env):
-        pass
-
-
-class RandomAgent(Agent):
-    def intention(self, env):
-        mask = get_mask(env.get_curr_handcards(), action_space, env.get_last_outcards())
-        intention = np.random.choice(action_space, 1, p=mask / mask.sum())[0]
-        return intention
-
-
-class RHCPAgent(Agent):
-    def intention(self, env):
-        intention = to_char(CEnv.step_auto_static(Card.char2color(env.get_curr_handcards()), to_value(env.get_last_outcards())))
-        return intention
-
-
-class CDQNAgent(Agent):
-    def __init__(self, role_id, weight_path):
-        def role2agent(role):
-            if role == 2:
-                return 'agent1'
-            elif role == 1:
-                return 'agent3'
-            else:
-                return 'agent2'
-        super().__init__(role_id)
-        agent_names = ['agent%d' % i for i in range(1, 4)]
-        model = Model(agent_names, (1000, 21, 256 + 256 * 2 + 120), 'Double', (1000, 21), 0.99)
-        self.predictor = Predictor(OfflinePredictor(PredictConfig(
-            model=model,
-            session_init=SaverRestore(weight_path),
-            input_names=[role2agent(role_id) + '/state', role2agent(role_id) + '_comb_mask', role2agent(role_id) + '/fine_mask'],
-            output_names=[role2agent(role_id) + '/Qvalue'])), num_actions=(1000, 21))
-
-    def intention(self, env):
-        handcards = env.get_curr_handcards()
-        last_two_cards = env.get_last_two_cards()
-        prob_state = env.get_state_prob()
-        intention = self.predictor.predict(handcards, last_two_cards, prob_state)
-        return intention
-
-
-def make_agent(which, role_id):
-    if which == 'RHCP':
-        return RHCPAgent(role_id)
-    elif which == 'RANDOM':
-        return RandomAgent(role_id)
-    elif which == 'CDQN':
-        return CDQNAgent(role_id, weight_path)
+    player_cards = data['player_cards']
+    my_cards = trans_cards( player_cards.split("|")[pos] )
+    last_move = trans_cards(data['last_move'])
+    if int(data['last_player']) == int(data['current_player']):
+        last_move = []
     else:
-        raise Exception('env type not supported')
+        last_move = trans_cards(data['last_move'])
+
+
+    intention = to_char(CEnv.step_auto_static(Card.char2color(my_cards), to_value(last_move)))
+
+    res =  trans_cards_reverse(intention)
+    if res == "":
+        res = 'P'
+    print("result is {}".format(res))
+    return jsonify({'move': res})
+
+if __name__ == '__main__':
+    print('Running Flask Server')
+    app.run(host='0.0.0.0', port=8098, debug=False)
 
